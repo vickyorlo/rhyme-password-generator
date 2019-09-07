@@ -1,0 +1,6 @@
+best.txt
+__pycache__/
+models/
+logs/
+logs_old/
+.vscode/
