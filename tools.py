@@ -66,27 +66,39 @@ def split(size):
             x_batch.write(x.rjust(size,'`')+'\n')
             y_batch.write(y.rjust(size,'`')+'\n')
 
-def predict(path_to_model):
-    model = load_model(path_to_model)
-
+def predict_from_file_to_file(path_to_model):
     with open("to_predict.txt",'r') as to_predict, open("predicted.txt",'w') as predicted:
-        to_predict = [line.rstrip().lower().rjust(16,'`') for line in to_predict]
-        to_predict = [[ [ord(ch)-96] for ch in line] for line in to_predict]
-        to_predict = to_categorical(numpy.array(to_predict),27)
-        result = model.predict(to_predict)
-        for line in result:
-            for c in line:
-                if numpy.argmax(c) == 96:
-                    c = 32
-                else:
-                    c = numpy.argmax(c)+96
-                predicted.write(chr(c))
-            predicted.write('\n')
+        predicted.write('\n'.join(predict(path_to_model,to_predict)))
         
-
 def saveGraphKeras(modelName):
     model = load_model(modelName)
     plot_model(model, to_file='model.png',show_shapes=True,show_layer_names=False)
+
+def predict_from_list(path_to_model, to_predict):
+    return predict(path_to_model,to_predict)
+
+def predict(path_to_model, to_predict):
+    model = load_model(path_to_model)
+
+    to_predict = [line.rstrip().lower().rjust(16,'`') for line in to_predict]
+    for line in to_predict:
+        if len(line)>16:
+            raise Exception('input cannot be longer than 16 characters!')
+    to_predict = [[ [ord(ch)-96] for ch in line] for line in to_predict]
+    to_predict = to_categorical(numpy.array(to_predict),27)
+    result = model.predict(to_predict)
+
+    predicted = []
+    for line in result:
+        word =""
+        for c in line:
+            if numpy.argmax(c) == 0:
+                c = 32
+            else:
+                c = numpy.argmax(c)+96
+            word += chr(c)
+        predicted.append(word.strip())
+    return predicted
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='parser')
@@ -100,7 +112,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.m:
-        predict(args.m)
+        predict_from_file_to_file(args.m)
 
     if args.g:
         saveGraphKeras(args.g)
